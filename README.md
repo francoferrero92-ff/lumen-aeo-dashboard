@@ -2,6 +2,8 @@
 
 A design engineering demo by [Franco Ferrero](https://francoferrero-portfolio.vercel.app/).
 
+**Live demo:** [lumen-aeo-dashboard.vercel.app](https://lumen-aeo-dashboard.vercel.app/)
+
 Lumen answers one question for a brand: **how often do AI assistants recommend us, and why?** It tracks a set of prompts across ChatGPT, Perplexity, Gemini and Google AI Overviews, and shows visibility, share of voice against competitors, sentiment, and the sources each answer cites.
 
 Brands, domains and data are fictional and generated from a fixed seed.
