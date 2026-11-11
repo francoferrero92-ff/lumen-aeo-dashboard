@@ -300,7 +300,9 @@ function buildResult(
   const reason = (id: BrandId) =>
     REASONS[id][Math.floor(rand() * REASONS[id].length)];
 
-  const subject = prompt.text.replace(/\?$/, "").toLowerCase();
+  const raw = prompt.text.replace(/\?$/, "");
+  // Lowercase only the first letter so brand names keep their capitals.
+  const subject = raw.charAt(0).toLowerCase() + raw.slice(1);
   const sentences = ranked.slice(0, 3).map((id, i) => {
     const lead =
       i === 0

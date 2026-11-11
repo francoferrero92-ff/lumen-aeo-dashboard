@@ -13,9 +13,20 @@ import {
 import { cn, formatCompact, formatPercent, formatPts } from "@/lib/format";
 import { Delta, Kbd, SentimentBadge } from "@/components/ui/Indicators";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { Select } from "@/components/ui/Select";
 
 type SortKey = "prompt" | "volume" | "visibility" | "delta" | "position";
 type Density = "comfortable" | "compact";
+type SortValue = `${SortKey}:${"asc" | "desc"}`;
+
+const SORT_OPTIONS: { value: SortValue; label: string }[] = [
+  { value: "volume:desc", label: "Sort: Volume" },
+  { value: "visibility:desc", label: "Sort: Visibility" },
+  { value: "delta:desc", label: "Sort: Biggest gain" },
+  { value: "delta:asc", label: "Sort: Biggest drop" },
+  { value: "position:asc", label: "Sort: Best position" },
+  { value: "prompt:asc", label: "Sort: A–Z" },
+];
 
 interface Row {
   prompt: Prompt;
@@ -117,11 +128,11 @@ export function PromptsTable({
             Tracked prompts
           </h2>
           <p className="mt-0.5 text-[13px] text-ink-3">
-            Rolling 30-day window · click a prompt to see the answers
+            Rolling 30-day window · <span className="sm:hidden">tap</span><span className="hidden sm:inline">click</span> a prompt to see the answers
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <label className="relative flex h-8 flex-1 items-center sm:w-64 sm:flex-none">
+        <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+          <label className="relative flex h-8 flex-1 basis-full items-center sm:w-64 sm:flex-none sm:basis-auto">
             <span className="sr-only">Search prompts</span>
             <Search size={14} className="absolute left-2.5 text-ink-3" aria-hidden />
             <input
@@ -148,6 +159,17 @@ export function PromptsTable({
               </span>
             )}
           </label>
+          {/* Cards have no column headers, so phones sort from here. */}
+          <Select
+            label="Sort prompts"
+            className="h-8 flex-1 sm:hidden"
+            value={`${sort.key}:${sort.dir}` as SortValue}
+            onChange={(v) => {
+              const [key, dir] = v.split(":") as [SortKey, "asc" | "desc"];
+              setSort({ key, dir });
+            }}
+            options={SORT_OPTIONS}
+          />
           <SegmentedControl
             label="Row density"
             size="sm"
@@ -192,8 +214,16 @@ export function PromptsTable({
         })}
       </div>
 
+      <ul key={`cards-${filterKey}`} className="divide-y divide-line sm:hidden" aria-label="Tracked prompts">
+        {rows.map(({ prompt, m }, i) => (
+          <li key={prompt.id} className="row-in" style={{ animationDelay: `${Math.min(i, 8) * 24}ms` }}>
+            <PromptCard prompt={prompt} m={m} engine={engine} compact={density === "compact"} onOpen={onOpen} />
+          </li>
+        ))}
+      </ul>
+
       <div
-        className="group/scroll relative overflow-x-auto overscroll-x-contain"
+        className="group/scroll relative hidden overflow-x-auto overscroll-x-contain sm:block"
         data-scrolled={scrolled}
         onScroll={(e) => setScrolled(e.currentTarget.scrollLeft > 2)}
       >
@@ -376,6 +406,79 @@ function EngineDots({ prompt, engine }: { prompt: Prompt; engine: EngineFilter }
           />
         );
       })}
+    </span>
+  );
+}
+
+/**
+ * Phone layout: one card per prompt. Same data as a table row, regrouped so
+ * the prompt reads first and the three numbers sit side by side with labels.
+ */
+function PromptCard({
+  prompt,
+  m,
+  engine,
+  compact,
+  onOpen,
+}: Row & { engine: EngineFilter; compact: boolean; onOpen: (p: Prompt) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(prompt)}
+      className={cn(
+        "group flex w-full items-start gap-3 px-4 text-left transition-colors active:bg-surface-2",
+        compact ? "py-3" : "py-4",
+      )}
+    >
+      <span className="min-w-0 flex-1">
+        <span className="block text-[14px] leading-snug font-medium text-ink">{prompt.text}</span>
+        {!compact && (
+          <span className="mt-1 block text-xs text-ink-3">
+            {prompt.topic} · {formatCompact(prompt.volume)}/mo
+          </span>
+        )}
+
+        <span className={cn("grid grid-cols-3 gap-3", compact ? "mt-2" : "mt-3")}>
+          <Metric label="Visibility">
+            <span className="flex items-center gap-1.5">
+              <span className="font-semibold text-ink tabular-nums">{formatPercent(m.visibility)}</span>
+              <span className="relative h-1 w-full max-w-10 overflow-hidden rounded-full bg-accent-wash">
+                <span
+                  className="series-mark absolute inset-y-0 left-0 rounded-full bg-accent"
+                  style={{ width: formatPercent(m.visibility, 1) }}
+                />
+              </span>
+            </span>
+          </Metric>
+          <Metric label="Change">
+            <Delta value={m.delta * 100} label={formatPts(m.delta * 100, 0)} threshold={0.5} />
+          </Metric>
+          <Metric label="Avg. pos.">
+            {m.position ? (
+              <span className="font-semibold text-ink tabular-nums">#{m.position.toFixed(1)}</span>
+            ) : (
+              <span className="text-ink-3">—</span>
+            )}
+          </Metric>
+        </span>
+
+        {!compact && (
+          <span className="mt-3 flex items-center justify-between gap-3">
+            <SentimentBadge sentiment={m.sentiment} compact />
+            <EngineDots prompt={prompt} engine={engine} />
+          </span>
+        )}
+      </span>
+      <ChevronRight size={16} className="mt-0.5 shrink-0 text-ink-3" aria-hidden />
+    </button>
+  );
+}
+
+function Metric({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <span className="block min-w-0 text-[13px]">
+      <span className="mb-0.5 block text-[11px] text-ink-3">{label}</span>
+      {children}
     </span>
   );
 }
