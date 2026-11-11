@@ -1,0 +1,227 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens
+ * -------------
+ * Two layers: raw values live in CSS custom properties (one place to swap
+ * light/dark), and Tailwind's @theme maps them to utility names by ROLE
+ * (bg-surface, text-ink-2, border-line…). Components never reference hex.
+ */
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  color-scheme: light;
+
+  /* Planes */
+  --bg: #f4f4f1;
+  --surface: #fcfcfb;
+  --surface-2: #f0efec;
+  --surface-3: #e8e7e2;
+  --overlay: rgba(11, 11, 11, 0.32);
+
+  /* Ink */
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --ink-3: #6f6e69;
+
+  /* Lines */
+  --line: rgba(11, 11, 11, 0.08);
+  --line-strong: rgba(11, 11, 11, 0.14);
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+
+  /* Accent & feedback */
+  --accent: #2a78d6;
+  --accent-ink: #1c5cab;
+  --accent-wash: rgba(42, 120, 214, 0.1);
+  --good: #006300;
+  --good-wash: rgba(12, 163, 12, 0.1);
+  --bad: #b42828;
+  --bad-wash: rgba(208, 59, 59, 0.1);
+  --warn: #8a5a00;
+  --warn-wash: rgba(250, 178, 25, 0.16);
+
+  /* Data series — validated categorical slots (CVD-safe adjacent order) */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-other: #c3c2b7;
+
+  --shadow-pop: 0 1px 2px rgba(11, 11, 11, 0.06), 0 8px 24px -6px rgba(11, 11, 11, 0.16);
+  --shadow-drawer: -24px 0 48px -12px rgba(11, 11, 11, 0.22);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-2: #232321;
+  --surface-3: #2c2c2a;
+  --overlay: rgba(0, 0, 0, 0.56);
+
+  --ink: #f0efec;
+  --ink-2: #c3c2b7;
+  --ink-3: #9a9890;
+
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --grid: #2c2c2a;
+  --axis: #383835;
+
+  --accent: #3987e5;
+  --accent-ink: #86b6ef;
+  --accent-wash: rgba(57, 135, 229, 0.16);
+  --good: #3fc23f;
+  --good-wash: rgba(12, 163, 12, 0.16);
+  --bad: #f08585;
+  --bad-wash: rgba(208, 59, 59, 0.18);
+  --warn: #fab219;
+  --warn-wash: rgba(250, 178, 25, 0.14);
+
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-other: #52514e;
+
+  --shadow-pop: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px -8px rgba(0, 0, 0, 0.6);
+  --shadow-drawer: -24px 0 48px -12px rgba(0, 0, 0, 0.7);
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-overlay: var(--overlay);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-grid: var(--grid);
+  --color-axis: var(--axis);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-wash: var(--accent-wash);
+  --color-good: var(--good);
+  --color-good-wash: var(--good-wash);
+  --color-bad: var(--bad);
+  --color-bad-wash: var(--bad-wash);
+  --color-warn: var(--warn);
+  --color-warn-wash: var(--warn-wash);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-series-3: var(--series-3);
+  --color-series-4: var(--series-4);
+  --color-series-other: var(--series-other);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  --shadow-pop: var(--shadow-pop);
+  --shadow-drawer: var(--shadow-drawer);
+
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  html {
+    background: var(--bg);
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+  }
+  ::selection {
+    background: var(--accent-wash);
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+/* Drawer: native <dialog> with enter/exit transitions (no JS animation lib). */
+.drawer {
+  margin: 0 0 0 auto;
+  height: 100dvh;
+  max-height: 100dvh;
+  width: min(560px, 100vw);
+  max-width: 100vw;
+  border: 0;
+  padding: 0;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-drawer);
+  translate: 100% 0;
+  transition:
+    translate 360ms var(--ease-out-expo),
+    overlay 360ms allow-discrete,
+    display 360ms allow-discrete;
+}
+.drawer[open] {
+  translate: 0 0;
+}
+@starting-style {
+  .drawer[open] {
+    translate: 100% 0;
+  }
+}
+.drawer::backdrop {
+  background: var(--overlay);
+  opacity: 0;
+  transition:
+    opacity 260ms ease,
+    overlay 260ms allow-discrete,
+    display 260ms allow-discrete;
+}
+.drawer[open]::backdrop {
+  opacity: 1;
+}
+@starting-style {
+  .drawer[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+/* Table rows fade in when filters change, without shifting layout. */
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+}
+.row-in {
+  animation: row-in 220ms var(--ease-out-quart) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after,
+  .drawer,
+  .drawer::backdrop {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* Forced colors: keep data marks visible without relying on our palette. */
+@media (forced-colors: active) {
+  .series-mark {
+    forced-color-adjust: none;
+  }
+}
