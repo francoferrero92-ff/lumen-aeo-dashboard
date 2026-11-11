@@ -22,8 +22,12 @@ interface Row {
   m: ReturnType<typeof promptMetrics>;
 }
 
+/** Divider + soft shadow on the sticky column, only once the table is scrolled sideways. */
+const STICKY_EDGE =
+  "after:pointer-events-none after:absolute after:inset-y-0 after:-right-px after:w-px after:bg-line-strong after:opacity-0 after:transition-opacity group-data-[scrolled=true]/scroll:after:opacity-100 group-data-[scrolled=true]/scroll:shadow-[8px_0_12px_-8px_rgba(0,0,0,0.22)]";
+
 const COLUMNS: { key: SortKey; label: string; align?: "right"; className?: string }[] = [
-  { key: "prompt", label: "Prompt", className: "w-[38%] min-w-64" },
+  { key: "prompt", label: "Prompt", className: "w-[38%] min-w-40 max-sm:max-w-44 sm:min-w-64" },
   { key: "volume", label: "Volume", align: "right" },
   { key: "visibility", label: "Visibility", className: "min-w-40" },
   { key: "delta", label: "Change", align: "right" },
@@ -46,6 +50,7 @@ export function PromptsTable({
     dir: "desc",
   });
   const [density, setDensity] = useState<Density>("comfortable");
+  const [scrolled, setScrolled] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   // "/" focuses search, like most data tools.
@@ -187,7 +192,11 @@ export function PromptsTable({
         })}
       </div>
 
-      <div className="relative overflow-x-auto">
+      <div
+        className="group/scroll relative overflow-x-auto overscroll-x-contain"
+        data-scrolled={scrolled}
+        onScroll={(e) => setScrolled(e.currentTarget.scrollLeft > 2)}
+      >
         <table className="w-full min-w-[780px] border-separate border-spacing-0 text-[13px]">
           <caption className="sr-only">
             Tracked prompts with Halcyon visibility, change, position, sentiment and engine coverage
@@ -203,7 +212,7 @@ export function PromptsTable({
                     aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
                     className={cn(
                       "border-b border-line px-4 py-2 font-medium",
-                      i === 0 && "sticky left-0 z-10 bg-surface",
+                      i === 0 && cn("sticky left-0 z-10 bg-surface max-sm:pl-3", STICKY_EDGE),
                       c.className,
                     )}
                   >
@@ -251,7 +260,8 @@ export function PromptsTable({
               >
                 <td
                   className={cn(
-                    "sticky left-0 z-10 border-b border-line bg-surface px-4 transition-colors group-hover:bg-surface-2",
+                    "sticky left-0 z-10 border-b border-line bg-surface px-4 transition-[background-color,box-shadow] group-hover:bg-surface-2 max-sm:pl-3",
+                    STICKY_EDGE,
                     cellY,
                   )}
                 >

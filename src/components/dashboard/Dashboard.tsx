@@ -17,12 +17,14 @@ import {
   type Prompt,
   type RangeDays,
 } from "@/lib/data";
-import { formatDay, formatPercent, formatPts } from "@/lib/format";
+import { cn, formatDay, formatPercent, formatPts } from "@/lib/format";
+import { useHideOnScroll } from "@/lib/useHideOnScroll";
 import { LineChart } from "@/components/charts/LineChart";
 import { ShareOfVoice } from "@/components/charts/ShareOfVoice";
 import { Sparkline } from "@/components/charts/Sparkline";
 import { Delta } from "@/components/ui/Indicators";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { Select } from "@/components/ui/Select";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { KpiCard } from "./KpiCard";
 import { PromptDrawer } from "./PromptDrawer";
@@ -31,11 +33,21 @@ import { LumenMark } from "./Sidebar";
 
 const color = (slot: number) => `var(--series-${slot})`;
 
+const RANGE_OPTIONS: { value: "30" | "90"; label: string }[] = [
+  { value: "30", label: "Last 30 days" },
+  { value: "90", label: "Last 90 days" },
+];
+const ENGINE_OPTIONS: { value: EngineFilter; label: string }[] = [
+  { value: "all", label: "All engines" },
+  ...ENGINES.map((e) => ({ value: e.id, label: e.name })),
+];
+
 export function Dashboard() {
   const [range, setRange] = useState<RangeDays>(90);
   const [engine, setEngine] = useState<EngineFilter>("all");
   const [open, setOpen] = useState<Prompt | null>(null);
   const [chartView, setChartView] = useState<"chart" | "table">("chart");
+  const filtersHidden = useHideOnScroll();
 
   const data = useMemo(() => {
     const byBrand = BRANDS.map((b) => {
@@ -100,26 +112,35 @@ export function Dashboard() {
         </div>
       </header>
 
-      {/* Filters: one row, above everything they scope. Date range first. */}
-      <div className="sticky top-0 z-30 -mx-4 mt-5 flex gap-2 overflow-x-auto bg-bg/85 px-4 py-2.5 backdrop-blur-md [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-        <SegmentedControl
-          label="Date range"
-          value={String(range) as "30" | "90"}
-          onChange={(v) => setRange(Number(v) as RangeDays)}
-          options={[
-            { value: "30", label: "Last 30 days" },
-            { value: "90", label: "Last 90 days" },
-          ]}
-        />
-        <SegmentedControl
-          label="AI engine"
-          value={engine}
-          onChange={setEngine}
-          options={[
-            { value: "all", label: "All engines" },
-            ...ENGINES.map((e) => ({ value: e.id, label: e.name })),
-          ]}
-        />
+      {/*
+        Filters: one row, above everything they scope. Date range first.
+        Phones get two native selects side by side (no horizontal scroll), and
+        the bar slides away while scrolling down, returning on scroll up.
+      */}
+      <div
+        className={cn(
+          "sticky top-0 z-30 -mx-4 mt-5 bg-bg/85 px-4 py-2.5 backdrop-blur-md transition-transform duration-300 ease-out-quart sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
+          filtersHidden && "max-sm:-translate-y-full",
+        )}
+      >
+        <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)] gap-2 sm:hidden">
+          <Select
+            label="Date range"
+            value={String(range) as "30" | "90"}
+            onChange={(v) => setRange(Number(v) as RangeDays)}
+            options={RANGE_OPTIONS}
+          />
+          <Select label="AI engine" value={engine} onChange={setEngine} options={ENGINE_OPTIONS} />
+        </div>
+        <div className="hidden gap-2 sm:flex">
+          <SegmentedControl
+            label="Date range"
+            value={String(range) as "30" | "90"}
+            onChange={(v) => setRange(Number(v) as RangeDays)}
+            options={RANGE_OPTIONS}
+          />
+          <SegmentedControl label="AI engine" value={engine} onChange={setEngine} options={ENGINE_OPTIONS} />
+        </div>
       </div>
 
       {/* KPIs */}
